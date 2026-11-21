@@ -1,37 +1,50 @@
 # WhatsApp Member Exporter
 
-Small, local-only Chrome extension that exports participant details rendered in an open WhatsApp Web group member list.
+Chrome Manifest V3 extension that exports only participant and chat details rendered in WhatsApp Web. Scanning starts only after a user clicks a scan action. Parsing, preview, deduplication, and CSV generation run locally in the popup; there is no server, network request, or persistent contact storage.
 
-## Current version
+## Current features
 
-- Manifest V3 with `activeTab` and `scripting` permissions.
-- Scans only after **Scan members** is clicked on `https://web.whatsapp.com/`.
-- Reads visible participant rows, scrolls a detected member panel, and deduplicates numbered entries by digits while retaining the displayed number.
-- Shows observed entries, unique numbers, name-only entries, and a rendered member count when found.
-- Creates CSV in the popup. No server, API calls, persistent storage, or dependencies.
+- Scan an already-open group member list, scrolling inside the rendered participant panel.
+- Choose multiple groups from WhatsApp's rendered Groups chat filter. The extension opens each selected group and its member list, scans it, then attempts to restore the original chat and chat-list position.
+- Scan currently rendered chat rows without opening a contact panel or scrolling. This is a visible chat list export, not a full address-book export; group rows may be included and off-screen rows are omitted.
+- Preview scanned rows, unique phone numbers, name-only entries, and member count coverage when WhatsApp shows a count.
+- CSV columns: `group`, `saved_as`, `whatsapp_name`, `phone_number`, `status`. Name-only numbers remain blank. Displayed Indian 10-digit numbers and `91` numbers normalize to `+91XXXXXXXXXX`; explicit international `+` country codes are retained.
+- Numbers deduplicate by normalized digits; records with no phone number are retained separately, even when their display names match.
 
-## Install for local use
+## Install locally
 
-1. Open `chrome://extensions` in Chrome.
-2. Turn on **Developer mode**.
-3. Choose **Load unpacked** and select this folder.
-4. Open WhatsApp Web, open a group, and open its member list.
-5. Open the extension, choose **Scan members**, review the preview, then download CSV.
+1. Open `chrome://extensions` and turn on Developer mode.
+2. Choose **Load unpacked** and select this folder.
+3. Open WhatsApp Web. Click the extension and choose a scan action.
+4. Review the preview before choosing **Download CSV**.
 
-## Files
+After editing, use **Reload** on the extension card in `chrome://extensions`.
 
-- `manifest.json`: extension permissions and popup entry point.
-- `popup.html`: small popup UI.
-- `popup.js`: scan, preview, and CSV generation.
-- `graphify-out/graph.json`: Graphify code graph; refresh with `graphify update . --no-cluster`.
+## Development and checks
+
+- `node --check popup.js`
+- `node --test tests/popup.test.mjs`
+- Refresh the code graph with `graphify update . --no-cluster`.
 
 ## Roadmap
 
-1. **First version (current):** scan rendered rows, show coverage, export `name,phone_number,status`.
-2. **Manual validation:** verify saved and unsaved contact rendering; test small, scrolling, and name-only groups against current WhatsApp Web.
-3. **Selector hardening:** adjust panel and row detection only from observed WhatsApp Web DOM behavior; surface uncertain or incomplete scans clearly.
-4. **Coverage refinement:** compare unique observed rows with WhatsApp's displayed member count and report count mismatches.
+1. **First version:** rendered group and visible chat scans, selected-group traversal, local CSV, and tests for normalization/deduplication.
+2. **Manual WhatsApp validation:** compare behavior on a small group, a group requiring scrolling, and rows where WhatsApp shows only a name; confirm current selectors and restoration behavior.
+3. **Selector maintenance:** update selectors if WhatsApp Web changes its rendered DOM; report incomplete scans when rows or counts cannot be verified.
 
-## Known limits
+## Manual validation plan
 
-WhatsApp Web changes its DOM. Panel and participant-row detection use generic rendered UI roles, so a UI change can prevent or limit scans. The extension cannot export numbers WhatsApp does not render. Without a readable member count, end-of-scroll is only an estimate. The popup and scan remain open until completion; closing the member list ends the scan with collected rows marked partial when available.
+1. **Small group:** scan an open member list, compare the preview with the visible member count, and verify a CSV includes the expected fields.
+2. **Long group:** use the group picker on a group requiring scrolling; confirm rows at the beginning and end are included and the original chat is restored.
+3. **Name-only rows:** verify the number stays blank, names remain in the correct columns when displayed, and separate people with the same displayed name are not merged.
+
+## Limits and risks
+
+WhatsApp Web is not a stable extension API. The panel, row, filter, and count selectors depend on its current rendered interface and may need maintenance. A member list that closes or changes during a scan is reported as partial when detected; group switching or chat restoration can fail if the interface changes or navigation is interrupted. A displayed member count helps compare coverage, but without one the end-of-list estimate is approximate. `whatsapp_name` is filled only when a distinct WhatsApp name is rendered; WhatsApp often exposes only one visible name. The extension cannot recover hidden numbers or enumerate the complete contact book.
+
+## Files
+
+- `manifest.json`: minimal MV3 permissions (`activeTab`, `scripting`).
+- `popup.html`, `popup.js`: accessible popup, rendered-row readers, preview, and CSV export.
+- `tests/popup.test.mjs`: Node built-in tests for number normalization, off-screen filtering, duplicate names, and number deduplication.
+- `graphify-out/graph.json`: Graphify code graph.

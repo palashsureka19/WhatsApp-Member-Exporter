@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WhatsApp Member & Contacts Exporter",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Export rendered WhatsApp Web group members or visible chat contacts.",
   "permissions": ["activeTab", "scripting"],
   "action": { "default_popup": "popup.html" }

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Member Exporter</title>
+<style>
+  body{font:14px system-ui,sans-serif;width:360px;margin:16px;color:#17211b}button{padding:8px 12px;border:0;border-radius:6px;background:#087f5b;color:white;font-weight:600;cursor:pointer}button:disabled{opacity:.6}#status{margin:12px 0}.summary{color:#43534a;margin:8px 0}#rows{max-height:240px;overflow:auto}.row{padding:6px 0;border-top:1px solid #ddd;overflow-wrap:anywhere}.muted{color:#66736c}
+</style>
+<h3>WhatsApp Member Exporter</h3>
+<button id="scan">Scan members</button>
+<div id="status" role="status">Open a group member list, then scan.</div>
+<div id="preview"></div>
+<button id="download" hidden>Download CSV</button>
+<script src="popup.js"></script>
+</html>

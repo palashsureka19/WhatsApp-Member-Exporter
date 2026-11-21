@@ -23,6 +23,7 @@ Small, local-only Chrome extension that exports participant details rendered in 
 - `manifest.json`: extension permissions and popup entry point.
 - `popup.html`: small popup UI.
 - `popup.js`: scan, preview, and CSV generation.
+- `graphify-out/graph.json`: Graphify code graph; refresh with `graphify update . --no-cluster`.
 
 ## Roadmap
 

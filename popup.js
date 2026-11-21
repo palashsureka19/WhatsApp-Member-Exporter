@@ -53,6 +53,7 @@ async function startScan(scanner, exportType) {
     coverage.className = 'coverage';
     coverage.textContent = exportType === 'contacts' ? `Read ${result.rowsObserved} rendered chat rows without scrolling. Group chats may appear; contacts outside the rendered list are omitted.` : result.memberCount == null ? 'WhatsApp showed no readable member count; coverage is based on reaching the apparent scroll end.' : `Observed ${result.rowsObserved} of ${result.memberCount} displayed members.`;
     preview.append(coverage);
+    preview.append(download);
     const list = document.createElement('div');
     list.id = 'rows';
     for (const entry of result.entries) {
@@ -119,12 +120,14 @@ async function scanSelectedGroups() {
   download.hidden = true;
   preview.replaceChildren();
   const scans = [];
+  let activeGroup;
   let tab;
   let restored = false;
   try {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.url?.startsWith('https://web.whatsapp.com/')) throw new Error('Open WhatsApp Web first.');
     for (const [index, group] of selected.entries()) {
+      activeGroup = group;
       status.textContent = `Scanning ${index + 1} of ${selected.length}: ${group.name}`;
       const [opened] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: openGroupAndMemberList, args: [group] });
       const openedData = injectedResult(opened, `WhatsApp did not return a result while opening “${group.name}”.`);
@@ -136,7 +139,7 @@ async function scanSelectedGroups() {
       scans.push(injectedResult(reply, `WhatsApp did not return scan data for “${group.name}”.`));
     }
   } catch (error) {
-    status.textContent = error.message || 'Group scan failed.';
+    scans.push({ group: activeGroup?.name || 'Group scan', error: error.message || 'Group scan failed.', entries: [], rowsObserved: 0, complete: false });
   } finally {
     if (tab?.id && groupContext) {
       try {
@@ -151,8 +154,9 @@ async function scanSelectedGroups() {
   result = mergeGroupResults(scans);
   result.exportType = 'groups';
   result.groupCount = scans.filter(scan => !scan.error).length;
-  result.failedGroups = scans.filter(scan => scan.error).map(scan => scan.group);
-  status.textContent = `${result.groupCount} of ${selected.length} groups scanned${restored ? '; original chat restored' : '; chat restoration uncertain'}.`;
+  result.failedGroups = scans.filter(scan => scan.error).map(scan => ({ group: scan.group, error: scan.error }));
+  const firstFailure = result.failedGroups[0];
+  status.textContent = `${result.groupCount} of ${selected.length} groups scanned${restored ? '; original chat restored' : '; chat restoration uncertain'}${firstFailure ? `; ${firstFailure.group}: ${firstFailure.error}` : ''}.`;
   renderResult(result, 'groups');
 }
 
@@ -192,8 +196,15 @@ function renderResult(data, exportType) {
   preview.append(summary);
   const coverage = document.createElement('p');
   coverage.className = 'coverage';
-  coverage.textContent = exportType === 'contacts' ? `Read ${data.rowsObserved} rendered chat rows without scrolling. Group chats may appear; off-screen contacts are omitted.` : exportType === 'groups' ? `${data.groupCount} groups scanned. Numbers deduplicated across groups.` : data.memberCount == null ? 'No readable member count; completion is based on reaching the apparent scroll end.' : `Observed ${data.rowsObserved} of ${data.memberCount} displayed members.`;
+  coverage.textContent = exportType === 'contacts' ? `Read ${data.rowsObserved} rendered chat rows without scrolling. Group chats may appear; off-screen contacts are omitted.` : exportType === 'groups' ? `${data.groupCount} of ${data.groupCount + (data.failedGroups?.length || 0)} groups scanned. Numbers deduplicated across groups.` : data.memberCount == null ? 'No readable member count; completion is based on reaching the apparent scroll end.' : `Observed ${data.rowsObserved} of ${data.memberCount} displayed members.`;
   preview.append(coverage);
+  if (data.failedGroups?.length) {
+    const failures = document.createElement('p');
+    failures.className = 'coverage';
+    failures.textContent = `Could not scan ${data.failedGroups.length} group(s): ${data.failedGroups.slice(0, 3).map(item => `${item.group}: ${item.error}`).join(' · ')}`;
+    preview.append(failures);
+  }
+  preview.append(download);
   const list = document.createElement('div');
   list.id = 'rows';
   for (const entry of data.entries) {
@@ -227,31 +238,43 @@ download.addEventListener('click', () => {
 async function readGroups() {
   const visible = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width && r.height && s.display !== 'none' && s.visibility !== 'hidden'; };
   const label = el => (el.getAttribute('aria-label') || el.innerText || el.title || '').replace(/\s+/g, ' ').trim();
+  const rowName = row => {
+    const title = row.querySelector('[data-testid="cell-frame-title"]') || row.querySelector('span[title]');
+    const preferred = (title?.getAttribute('title') || title?.innerText || '').split('\n')[0].trim();
+    const noise = text => !text || /^\d+\s+unread messages?$/i.test(text) || /^(?:\d{1,2}:\d{2}|Yesterday|Today|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/i.test(text) || /^(?:pinned chat|muted chat|view status|new messages will disappear)/i.test(text);
+    if (preferred && !noise(preferred)) return preferred;
+    return (row.innerText || '').split(/\r?\n/).map(line => line.trim()).find(line => !noise(line)) || '';
+  };
+  const selected = el => el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-checked') === 'true' || el.classList.contains('selected');
   const buttons = [...document.querySelectorAll('button,[role="button"]')].filter(visible);
   const groupFilter = buttons.find(el => /^Groups(?:\s+\d+)?$/i.test(label(el)));
   if (!groupFilter) return { error: 'Could not find WhatsApp’s Groups filter.' };
-  const activeFilter = buttons.find(el => el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true' || el.classList.contains('selected'));
+  const activeFilter = buttons.find(selected);
   const header = document.querySelector('#main header');
   const info = [...(header?.querySelectorAll('button') || [])].find(el => /^(Group info|Contact info)/i.test(el.getAttribute('aria-label') || el.title || el.innerText || ''));
   const infoLabel = info?.getAttribute('aria-label') || info?.title || info?.innerText || '';
   const chat = infoLabel.replace(/^(Group info|Contact info)\s*/i, '').trim() || header?.querySelector('[title]')?.getAttribute('title') || header?.innerText?.split('\n')[0]?.trim() || '';
   const context = { filter: activeFilter ? label(activeFilter) : 'All', chat, scrollTop: 0 };
+  const originalPane = document.querySelector('#pane-side,[role="grid"][aria-label*="Chat list"]');
+  if (!originalPane) return { error: 'Could not find the WhatsApp chat list.' };
+  const originalHosts = [originalPane, ...originalPane.querySelectorAll('*')].filter(el => el.scrollHeight > el.clientHeight + 20 && /auto|scroll/.test(getComputedStyle(el).overflowY));
+  const originalHost = originalHosts.sort((a, b) => b.clientHeight - a.clientHeight)[0] || originalPane;
+  context.scrollTop = originalHost.scrollTop;
+  const totalHint = Number(label(groupFilter).match(/\d+/)?.[0]) || null;
+  if (!selected(groupFilter)) groupFilter.click();
+  await new Promise(resolve => setTimeout(resolve, 350));
+  if (!selected(groupFilter)) return { error: 'WhatsApp did not activate the Groups filter.' };
   const pane = document.querySelector('#pane-side,[role="grid"][aria-label*="Chat list"]');
-  if (!pane) return { error: 'Could not find the WhatsApp chat list.' };
+  if (!pane) return { error: 'Could not find the WhatsApp group list after selecting Groups.' };
   const hosts = [pane, ...pane.querySelectorAll('*')].filter(el => el.scrollHeight > el.clientHeight + 20 && /auto|scroll/.test(getComputedStyle(el).overflowY));
   const host = hosts.sort((a, b) => b.clientHeight - a.clientHeight)[0] || pane;
-  context.scrollTop = host.scrollTop;
-  const totalHint = Number(label(groupFilter).match(/\d+/)?.[0]) || null;
-  if (groupFilter.getAttribute('aria-pressed') !== 'true' && groupFilter.getAttribute('aria-selected') !== 'true') groupFilter.click();
-  await new Promise(resolve => setTimeout(resolve, 250));
   const groups = [];
   const known = new Set();
   const collect = () => {
     let rows = [...pane.querySelectorAll('[data-testid="cell-frame-container"]')];
     if (!rows.length) rows = [...pane.querySelectorAll('[role="row"]')];
     for (const row of rows.filter(visible)) {
-      const title = row.querySelector('[data-testid="cell-frame-title"]') || row.querySelector('span[title]');
-      const name = (title?.getAttribute('title') || title?.innerText || row.innerText || '').split('\n')[0].trim();
+      const name = rowName(row);
       if (name && !known.has(name)) { known.add(name); groups.push({ name }); }
     }
   };
@@ -273,10 +296,19 @@ async function readGroups() {
 async function openGroupAndMemberList(group) {
   const visible = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width && r.height && s.display !== 'none' && s.visibility !== 'hidden'; };
   const label = el => (el.getAttribute('aria-label') || el.innerText || el.title || '').replace(/\s+/g, ' ').trim();
+  const rowName = row => {
+    const title = row.querySelector('[data-testid="cell-frame-title"]') || row.querySelector('span[title]');
+    const preferred = (title?.getAttribute('title') || title?.innerText || '').split('\n')[0].trim();
+    const noise = text => !text || /^\d+\s+unread messages?$/i.test(text) || /^(?:\d{1,2}:\d{2}|Yesterday|Today|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/i.test(text) || /^(?:pinned chat|muted chat|view status|new messages will disappear)/i.test(text);
+    if (preferred && !noise(preferred)) return preferred;
+    return (row.innerText || '').split(/\r?\n/).map(line => line.trim()).find(line => !noise(line)) || '';
+  };
+  const selected = el => el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-checked') === 'true' || el.classList.contains('selected');
   const groups = [...document.querySelectorAll('button,[role="button"]')].find(el => /^Groups(?:\s+\d+)?$/i.test(label(el)));
   if (!groups) return { error: 'Could not find WhatsApp’s Groups filter.' };
-  if (groups.getAttribute('aria-pressed') !== 'true' && groups.getAttribute('aria-selected') !== 'true') groups.click();
-  await new Promise(resolve => setTimeout(resolve, 200));
+  if (!selected(groups)) groups.click();
+  await new Promise(resolve => setTimeout(resolve, 350));
+  if (!selected(groups)) return { error: 'WhatsApp did not activate the Groups filter.' };
   const pane = document.querySelector('#pane-side,[role="grid"][aria-label*="Chat list"]');
   const hosts = pane ? [pane, ...pane.querySelectorAll('*')].filter(el => el.scrollHeight > el.clientHeight + 20 && /auto|scroll/.test(getComputedStyle(el).overflowY)) : [];
   const host = hosts.sort((a, b) => b.clientHeight - a.clientHeight)[0] || pane;
@@ -284,10 +316,7 @@ async function openGroupAndMemberList(group) {
   let selectedRow;
   for (let step = 0; step < 100 && !selectedRow; step++) {
     const rows = [...pane.querySelectorAll('[data-testid="cell-frame-container"],[role="row"]')].filter(visible);
-    selectedRow = rows.find(row => {
-      const title = row.querySelector('[data-testid="cell-frame-title"]') || row.querySelector('span[title]');
-      return (title?.getAttribute('title') || title?.innerText || row.innerText || '').split('\n')[0].trim() === group.name;
-    });
+    selectedRow = rows.find(row => rowName(row) === group.name);
     if (selectedRow) break;
     const top = host.scrollTop;
     host.scrollTop = Math.min(top + Math.max(120, host.clientHeight * 0.75), host.scrollHeight);

@@ -5,7 +5,7 @@ Chrome Manifest V3 extension that exports only participant and chat details rend
 ## Current features
 
 - Scan one selected group or all discovered groups without manually opening each chat; the extension opens group details and scrolls the rendered participant panel automatically.
-- Choose one group or **All groups** from a compact dropdown. The extension opens each selected group and its member list, gathers rendered members automatically, then attempts to restore the original chat and chat-list position. Group discovery and member collection may move the WhatsApp chat/member panes while they run.
+- Choose one group or **All groups** from a compact dropdown. The extension activates WhatsApp's Groups filter, opens each selected group and its member list, gathers rendered members automatically, then attempts to restore the original chat and chat-list position. Scan failures now show the affected group and first error in the popup. Group discovery and member collection may move the WhatsApp chat/member panes while they run.
 - Scan currently rendered chat rows without opening a contact panel or scrolling. This is a visible chat list export, not a full address-book export; group rows may be included and off-screen rows are omitted.
 - Preview scanned rows, unique phone numbers, name-only entries, and member count coverage when WhatsApp shows a count.
 - CSV columns: `group`, `saved_as`, `whatsapp_name`, `phone_number`, `status`. Name-only numbers remain blank. Displayed Indian 10-digit numbers and `91` numbers normalize to `+91XXXXXXXXXX`; explicit international `+` country codes are retained.

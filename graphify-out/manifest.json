@@ -1,32 +1,32 @@
 {
   "manifest.json": {
-    "mtime": 1795273631.9859595,
-    "seen": 1795273645.1149015,
-    "ast_hash": "42d14b089b23536a550139e602c7f72c",
+    "mtime": 1795274328.2487943,
+    "seen": 1795274342.5135057,
+    "ast_hash": "59b16ebd9d839c1afd3b89dda8fb81d6",
     "semantic_hash": ""
   },
   "popup.js": {
-    "mtime": 1795273563.652133,
-    "seen": 1795273645.1149015,
-    "ast_hash": "7da22545c6a1abb31e87e8f820aaabbd",
+    "mtime": 1795274405.6103256,
+    "seen": 1795274440.9061856,
+    "ast_hash": "ea5d41be37310e4c33072ce117db14a6",
     "semantic_hash": ""
   },
   "popup.html": {
-    "mtime": 1795273556.8394115,
-    "seen": 1795273645.1149015,
-    "ast_hash": "c9bc5708afd5a339845779ae2349a036",
+    "mtime": 1795274253.0550134,
+    "seen": 1795274342.5135057,
+    "ast_hash": "3240be47c8639cf71e53207d682ced46",
     "semantic_hash": ""
   },
   "project.md": {
-    "mtime": 1795273574.6038313,
-    "seen": 1795273645.1149015,
-    "ast_hash": "d7c18c240426e9230f5266740fc79a01",
+    "mtime": 1795274333.8305726,
+    "seen": 1795274342.5135057,
+    "ast_hash": "49e789dc9b00d4f0f37325ab65151c3a",
     "semantic_hash": ""
   },
   "tests/popup.test.mjs": {
-    "mtime": 1795273613.5806983,
-    "seen": 1795273645.1149015,
-    "ast_hash": "282be39736973f02b1e605e6c6fc6210",
+    "mtime": 1795274416.2245862,
+    "seen": 1795274440.9061856,
+    "ast_hash": "eac2bcfc6df673376282c74a15069445",
     "semantic_hash": ""
   }
 }

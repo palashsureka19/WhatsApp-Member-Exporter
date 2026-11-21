@@ -84,6 +84,37 @@ test('readGroups runs as a standalone injected function', async () => {
   assert.equal(result.context.chat, '');
 });
 
+test('readGroups activates the group filter and ignores unread-message badges as names', async () => {
+  let pressed = false;
+  const groupFilter = {
+    innerText: 'Groups',
+    classList: { contains: () => false },
+    getAttribute: name => name === 'aria-pressed' ? String(pressed) : null,
+    getBoundingClientRect: () => ({ width: 60, height: 24 }),
+    click: () => { pressed = true; },
+  };
+  const makeRow = name => ({
+    innerText: name,
+    getBoundingClientRect: () => ({ width: 300, height: 36 }),
+    querySelector: () => ({ getAttribute: () => name, innerText: name }),
+  });
+  const pane = {
+    scrollTop: 0, scrollHeight: 100, clientHeight: 100,
+    querySelectorAll: selector => selector === '[data-testid="cell-frame-container"]' ? [makeRow('Group Alpha'), makeRow('3 unread messages\nGroup Beta\n9:30\nPreview')] : [],
+  };
+  const readGroups = loadFunction('readGroups', {
+    document: {
+      querySelectorAll: () => [groupFilter],
+      querySelector: selector => selector === '#main header' ? null : pane,
+    },
+    getComputedStyle: () => ({ display: 'block', visibility: 'visible', overflowY: 'visible' }),
+    setTimeout: callback => callback(),
+  });
+  const result = await readGroups();
+  assert.equal(pressed, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.groups.map(group => group.name))), ['Group Alpha', 'Group Beta']);
+});
+
 test('visible contact scan normalizes Indian numbers and preserves displayed country codes', () => {
   const rows = [row('Asha\n9876543210', 10, 'Asha'), row('Ben\n+1 (415) 555-0132', 50, 'Ben')];
   const list = {

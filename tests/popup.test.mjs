@@ -6,8 +6,9 @@ import vm from 'node:vm';
 const source = await readFile(new URL('../popup.js', import.meta.url), 'utf8');
 
 function loadFunction(name, globals = {}) {
-  const start = source.indexOf(`function ${name}(`);
+  let start = source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, `${name} exists`);
+  if (source.slice(start - 6, start) === 'async ') start -= 6;
   const end = source.indexOf('\n}', start) + 2;
   const context = vm.createContext(globals);
   return vm.runInContext(`(${source.slice(start, end)})`, context);
@@ -51,6 +52,36 @@ test('injected-script null results produce a useful error instead of a null prop
   assert.throws(() => readResult(undefined, 'No scan data'), /No scan data/);
   assert.throws(() => readResult({ result: null }, 'No group data'), /No group data/);
   assert.equal(readResult({ result: { groups: [] } }, 'No data').groups.length, 0);
+});
+
+test('functions passed to executeScript do not rely on popup-scope helpers', () => {
+  for (const name of ['readGroups', 'openGroupAndMemberList', 'restoreChat', 'scanMembers', 'scanVisibleContacts']) {
+    const start = source.indexOf(`function ${name}(`);
+    assert.notEqual(start, -1, `${name} exists`);
+    const end = source.indexOf('\n}', start) + 2;
+    assert.doesNotMatch(source.slice(start, end), /currentChatName\s*\(/, `${name} is self-contained`);
+  }
+});
+
+test('readGroups runs as a standalone injected function', async () => {
+  const groupFilter = {
+    innerText: 'Groups 1',
+    classList: { contains: () => false },
+    getAttribute: name => name === 'aria-pressed' ? 'true' : null,
+    getBoundingClientRect: () => ({ width: 40, height: 24 }),
+  };
+  const pane = { scrollTop: 0, scrollHeight: 100, clientHeight: 100, querySelectorAll: () => [] };
+  const readGroups = loadFunction('readGroups', {
+    document: {
+      querySelectorAll: () => [groupFilter],
+      querySelector: selector => selector === '#main header' ? null : pane,
+    },
+    getComputedStyle: () => ({ display: 'block', visibility: 'visible', overflowY: 'visible' }),
+    setTimeout: callback => callback(),
+  });
+  const result = await readGroups();
+  assert.equal(result.groups.length, 0);
+  assert.equal(result.context.chat, '');
 });
 
 test('visible contact scan normalizes Indian numbers and preserves displayed country codes', () => {

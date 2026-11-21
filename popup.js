@@ -1,4 +1,3 @@
-const scanButton = document.querySelector('#scan');
 const contactsButton = document.querySelector('#scanContacts');
 const loadGroupsButton = document.querySelector('#loadGroups');
 const groupPicker = document.querySelector('#groupPicker');
@@ -12,7 +11,6 @@ let result;
 let availableGroups = [];
 let groupContext;
 
-scanButton.addEventListener('click', () => startScan(scanMembers, 'group'));
 contactsButton.addEventListener('click', () => startScan(scanVisibleContacts, 'contacts'));
 loadGroupsButton.addEventListener('click', loadGroups);
 scanSelectedButton.addEventListener('click', scanSelectedGroups);
@@ -24,7 +22,6 @@ function injectedResult(reply, message) {
 }
 
 async function startScan(scanner, exportType) {
-  scanButton.disabled = true;
   contactsButton.disabled = true;
   loadGroupsButton.disabled = true;
   scanSelectedButton.disabled = true;
@@ -69,7 +66,6 @@ async function startScan(scanner, exportType) {
   } catch (error) {
     status.textContent = error.message || 'Scan failed. Open the group member list and try again.';
   } finally {
-    scanButton.disabled = false;
     contactsButton.disabled = false;
     loadGroupsButton.disabled = false;
     updateSelection();
@@ -118,7 +114,7 @@ function updateSelection() {
 async function scanSelectedGroups() {
   const selected = groupSelect.value === 'all' ? availableGroups : [availableGroups[Number(groupSelect.value)]].filter(Boolean);
   if (!selected.length) return;
-  for (const button of [scanButton, contactsButton, loadGroupsButton, scanSelectedButton]) button.disabled = true;
+  for (const button of [contactsButton, loadGroupsButton, scanSelectedButton]) button.disabled = true;
   status.textContent = `Scanning 0 of ${selected.length} groups…`;
   download.hidden = true;
   preview.replaceChildren();
@@ -148,7 +144,7 @@ async function scanSelectedGroups() {
         restored = reply.result.restored;
       } catch {}
     }
-    for (const button of [scanButton, contactsButton, loadGroupsButton]) button.disabled = false;
+    for (const button of [contactsButton, loadGroupsButton]) button.disabled = false;
     updateSelection();
   }
   if (!scans.length) return;
@@ -235,7 +231,11 @@ async function readGroups() {
   const groupFilter = buttons.find(el => /^Groups(?:\s+\d+)?$/i.test(label(el)));
   if (!groupFilter) return { error: 'Could not find WhatsApp’s Groups filter.' };
   const activeFilter = buttons.find(el => el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true' || el.classList.contains('selected'));
-  const context = { filter: activeFilter ? label(activeFilter) : 'All', chat: currentChatName(), scrollTop: 0 };
+  const header = document.querySelector('#main header');
+  const info = [...(header?.querySelectorAll('button') || [])].find(el => /^(Group info|Contact info)/i.test(el.getAttribute('aria-label') || el.title || el.innerText || ''));
+  const infoLabel = info?.getAttribute('aria-label') || info?.title || info?.innerText || '';
+  const chat = infoLabel.replace(/^(Group info|Contact info)\s*/i, '').trim() || header?.querySelector('[title]')?.getAttribute('title') || header?.innerText?.split('\n')[0]?.trim() || '';
+  const context = { filter: activeFilter ? label(activeFilter) : 'All', chat, scrollTop: 0 };
   const pane = document.querySelector('#pane-side,[role="grid"][aria-label*="Chat list"]');
   if (!pane) return { error: 'Could not find the WhatsApp chat list.' };
   const hosts = [pane, ...pane.querySelectorAll('*')].filter(el => el.scrollHeight > el.clientHeight + 20 && /auto|scroll/.test(getComputedStyle(el).overflowY));
@@ -268,13 +268,6 @@ async function readGroups() {
   await new Promise(resolve => setTimeout(resolve, 180));
   host.scrollTop = context.scrollTop;
   return { groups, totalHint, context };
-}
-
-function currentChatName() {
-  const header = document.querySelector('#main header');
-  const info = [...(header?.querySelectorAll('button') || [])].find(el => /^(Group info|Contact info)/i.test(el.getAttribute('aria-label') || el.title || el.innerText || ''));
-  const label = info?.getAttribute('aria-label') || info?.title || info?.innerText || '';
-  return label.replace(/^(Group info|Contact info)\s*/i, '').trim() || header?.querySelector('[title]')?.getAttribute('title') || header?.innerText?.split('\n')[0]?.trim() || '';
 }
 
 async function openGroupAndMemberList(group) {
@@ -353,6 +346,8 @@ async function restoreChat(context) {
 }
 
 async function scanMembers(groupName = '') {
+  const header = document.querySelector('#main header');
+  const activeGroup = groupName || header?.querySelector('[title]')?.getAttribute('title') || header?.innerText?.split('\n')[0]?.trim() || '';
   const visible = element => {
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
@@ -400,7 +395,7 @@ async function scanMembers(groupName = '') {
       const savedLine = names.find(line => !/^~\s*/.test(line));
       const saved_as = savedLine || '';
       const whatsapp_name = whatsappLine ? whatsappLine.replace(/^~\s*/, '') : names.length > 1 ? names[1] : '';
-      const entry = { group: groupName || currentChatName(), saved_as, whatsapp_name, name: saved_as || whatsapp_name || '', phone_number: phone, status: phone ? 'number_found' : 'name_only' };
+      const entry = { group: activeGroup, saved_as, whatsapp_name, name: saved_as || whatsapp_name || '', phone_number: phone, status: phone ? 'number_found' : 'name_only' };
       if (phone) {
         const key = phone.replace(/\D/g, '');
         if (!numbers.has(key)) numbers.set(key, entry);
@@ -428,7 +423,7 @@ async function scanMembers(groupName = '') {
   const complete = panel.isConnected && visible(panel) && panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 4;
   const close = panels.flatMap(root => [...root.querySelectorAll('button')]).find(button => visible(button) && /^(close|back)$/i.test(button.getAttribute('aria-label') || button.title || button.innerText || ''));
   close?.click();
-  return { entries, rowsObserved: observedRows.size, uniqueNumbers: numbers.size, nameOnly: nameless.size, memberCount, group: groupName || currentChatName(), complete };
+  return { entries, rowsObserved: observedRows.size, uniqueNumbers: numbers.size, nameOnly: nameless.size, memberCount, group: activeGroup, complete };
 }
 
 function scanVisibleContacts() {

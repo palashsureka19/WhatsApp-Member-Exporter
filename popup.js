@@ -2,7 +2,7 @@ const scanButton = document.querySelector('#scan');
 const contactsButton = document.querySelector('#scanContacts');
 const loadGroupsButton = document.querySelector('#loadGroups');
 const groupPicker = document.querySelector('#groupPicker');
-const groupList = document.querySelector('#groupList');
+const groupSelect = document.querySelector('#groupSelect');
 const groupCount = document.querySelector('#groupCount');
 const scanSelectedButton = document.querySelector('#scanSelected');
 const status = document.querySelector('#status');
@@ -16,7 +16,12 @@ scanButton.addEventListener('click', () => startScan(scanMembers, 'group'));
 contactsButton.addEventListener('click', () => startScan(scanVisibleContacts, 'contacts'));
 loadGroupsButton.addEventListener('click', loadGroups);
 scanSelectedButton.addEventListener('click', scanSelectedGroups);
-groupList.addEventListener('change', updateSelection);
+groupSelect.addEventListener('change', updateSelection);
+
+function injectedResult(reply, message) {
+  if (!reply?.result || typeof reply.result !== 'object') throw new Error(message);
+  return reply.result;
+}
 
 async function startScan(scanner, exportType) {
   scanButton.disabled = true;
@@ -30,7 +35,7 @@ async function startScan(scanner, exportType) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.url?.startsWith('https://web.whatsapp.com/')) throw new Error('Open WhatsApp Web first.');
     const [reply] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: scanner });
-    result = reply.result;
+    result = injectedResult(reply, 'WhatsApp did not return scan data. Keep the group open and try again.');
     if (result.error) throw new Error(result.error);
     result.exportType = exportType;
     status.textContent = exportType === 'contacts' ? 'Visible chat rows scanned; the full contact list may be incomplete.' : result.complete ? 'Scan reached the apparent end.' : 'Partial scan. Review coverage before export.';
@@ -75,28 +80,27 @@ async function loadGroups() {
   loadGroupsButton.disabled = true;
   groupPicker.hidden = false;
   groupCount.textContent = 'Loading…';
-  groupList.replaceChildren();
+  groupSelect.replaceChildren(new Option('Loading groups…', ''));
+  groupSelect.disabled = true;
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.url?.startsWith('https://web.whatsapp.com/')) throw new Error('Open WhatsApp Web first.');
     const [reply] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readGroups });
-    if (reply.result.error) throw new Error(reply.result.error);
-    availableGroups = reply.result.groups;
-    groupContext = reply.result.context;
-    for (const [index, group] of availableGroups.entries()) {
-      const label = document.createElement('label');
-      label.className = 'group-option';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = index;
-      const name = document.createElement('span');
-      name.textContent = group.name;
-      label.append(checkbox, name);
-      groupList.append(label);
+    const data = injectedResult(reply, 'WhatsApp did not return its group list. Reload WhatsApp Web and try again.');
+    if (data.error) throw new Error(data.error);
+    availableGroups = data.groups || [];
+    groupContext = data.context;
+    groupSelect.replaceChildren(new Option('Choose a group…', ''));
+    if (availableGroups.length) {
+      groupSelect.add(new Option(`All groups (${availableGroups.length})`, 'all'));
+      availableGroups.forEach((group, index) => groupSelect.add(new Option(group.name, String(index))));
     }
-    status.textContent = reply.result.totalHint > availableGroups.length ? `Loaded ${availableGroups.length} of ${reply.result.totalHint} groups.` : 'Choose groups to scan.';
+    groupSelect.disabled = availableGroups.length === 0;
+    status.textContent = data.totalHint > availableGroups.length ? `Loaded ${availableGroups.length} of ${data.totalHint} groups.` : `Loaded ${availableGroups.length} groups.`;
   } catch (error) {
     groupCount.textContent = '';
+    availableGroups = [];
+    groupSelect.replaceChildren(new Option('Could not load groups', ''));
     status.textContent = error.message || 'Could not load WhatsApp groups.';
   } finally {
     loadGroupsButton.disabled = false;
@@ -105,13 +109,14 @@ async function loadGroups() {
 }
 
 function updateSelection() {
-  const selected = groupList.querySelectorAll('input:checked').length;
-  scanSelectedButton.disabled = selected === 0;
-  if (availableGroups.length) groupCount.textContent = `${selected} selected · ${availableGroups.length} found`;
+  const selected = groupSelect.value;
+  scanSelectedButton.disabled = !selected;
+  scanSelectedButton.querySelector('strong').textContent = selected === 'all' ? `Scan all ${availableGroups.length} groups` : 'Scan selected group';
+  if (availableGroups.length) groupCount.textContent = `${availableGroups.length} found`;
 }
 
 async function scanSelectedGroups() {
-  const selected = [...groupList.querySelectorAll('input:checked')].map(input => availableGroups[Number(input.value)]);
+  const selected = groupSelect.value === 'all' ? availableGroups : [availableGroups[Number(groupSelect.value)]].filter(Boolean);
   if (!selected.length) return;
   for (const button of [scanButton, contactsButton, loadGroupsButton, scanSelectedButton]) button.disabled = true;
   status.textContent = `Scanning 0 of ${selected.length} groups…`;
@@ -126,12 +131,13 @@ async function scanSelectedGroups() {
     for (const [index, group] of selected.entries()) {
       status.textContent = `Scanning ${index + 1} of ${selected.length}: ${group.name}`;
       const [opened] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: openGroupAndMemberList, args: [group] });
-      if (opened.result.error) {
-        scans.push({ group: group.name, error: opened.result.error, entries: [], rowsObserved: 0, complete: false });
+      const openedData = injectedResult(opened, `WhatsApp did not return a result while opening “${group.name}”.`);
+      if (openedData.error) {
+        scans.push({ group: group.name, error: openedData.error, entries: [], rowsObserved: 0, complete: false });
         continue;
       }
       const [reply] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: scanMembers, args: [group.name] });
-      scans.push(reply.result);
+      scans.push(injectedResult(reply, `WhatsApp did not return scan data for “${group.name}”.`));
     }
   } catch (error) {
     status.textContent = error.message || 'Group scan failed.';

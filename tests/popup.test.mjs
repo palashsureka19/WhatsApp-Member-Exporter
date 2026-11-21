@@ -22,6 +22,37 @@ function row(text, top, titleText = text) {
   };
 }
 
+test('Choose groups handles a null injected result and restores a usable dropdown', async () => {
+  const elements = new Map();
+  const element = id => elements.get(id) || elements.set(id, {
+    addEventListener() {},
+    replaceChildren(...children) { this.children = children; this.value = children[0]?.value || ''; },
+    add(option) { (this.children ||= []).push(option); },
+    querySelector() { return { textContent: '' }; },
+    textContent: '', value: '', disabled: false,
+  }).get(id);
+  const context = vm.createContext({
+    document: { querySelector: selector => element(selector) },
+    chrome: {
+      tabs: { query: async () => [{ id: 7, url: 'https://web.whatsapp.com/' }] },
+      scripting: { executeScript: async () => [null] },
+    },
+    Option: class { constructor(text, value) { this.text = text; this.value = value; } },
+  });
+  vm.runInContext(source, context);
+  await context.loadGroups();
+  assert.match(element('#status').textContent, /did not return its group list/i);
+  assert.equal(element('#groupSelect').children[0].text, 'Could not load groups');
+  assert.equal(element('#scanSelected').disabled, true);
+});
+
+test('injected-script null results produce a useful error instead of a null property crash', () => {
+  const readResult = loadFunction('injectedResult');
+  assert.throws(() => readResult(undefined, 'No scan data'), /No scan data/);
+  assert.throws(() => readResult({ result: null }, 'No group data'), /No group data/);
+  assert.equal(readResult({ result: { groups: [] } }, 'No data').groups.length, 0);
+});
+
 test('visible contact scan normalizes Indian numbers and preserves displayed country codes', () => {
   const rows = [row('Asha\n9876543210', 10, 'Asha'), row('Ben\n+1 (415) 555-0132', 50, 'Ben')];
   const list = {

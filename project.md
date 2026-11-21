@@ -5,7 +5,7 @@ Chrome Manifest V3 extension that exports only participant and chat details rend
 ## Current features
 
 - Scan an already-open group member list, scrolling inside the rendered participant panel.
-- Choose multiple groups from WhatsApp's rendered Groups chat filter. The extension opens each selected group and its member list, scans it, then attempts to restore the original chat and chat-list position.
+- Choose one group or **All groups** from a compact dropdown. The extension opens each selected group and its member list, gathers rendered members automatically, then attempts to restore the original chat and chat-list position. Group discovery and member collection may move the WhatsApp chat/member panes while they run.
 - Scan currently rendered chat rows without opening a contact panel or scrolling. This is a visible chat list export, not a full address-book export; group rows may be included and off-screen rows are omitted.
 - Preview scanned rows, unique phone numbers, name-only entries, and member count coverage when WhatsApp shows a count.
 - CSV columns: `group`, `saved_as`, `whatsapp_name`, `phone_number`, `status`. Name-only numbers remain blank. Displayed Indian 10-digit numbers and `91` numbers normalize to `+91XXXXXXXXXX`; explicit international `+` country codes are retained.
@@ -28,7 +28,7 @@ After editing, use **Reload** on the extension card in `chrome://extensions`.
 
 ## Roadmap
 
-1. **First version:** rendered group and visible chat scans, selected-group traversal, local CSV, and tests for normalization/deduplication.
+1. **Current:** rendered group and visible chat scans, one/all group dropdown, local CSV, null-result handling, and tests for normalization/deduplication.
 2. **Manual WhatsApp validation:** compare behavior on a small group, a group requiring scrolling, and rows where WhatsApp shows only a name; confirm current selectors and restoration behavior.
 3. **Selector maintenance:** update selectors if WhatsApp Web changes its rendered DOM; report incomplete scans when rows or counts cannot be verified.
 

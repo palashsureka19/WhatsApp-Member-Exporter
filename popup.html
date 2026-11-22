@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Group Exporter</title>
+<style>
+  :root { font: 14px/1.45 system-ui,sans-serif; color: #18382d; background: #f3f6f2 }
+  * { box-sizing: border-box }
+  body { width: 390px; max-height: 590px; overflow: auto; margin: 0; padding: 16px }
+  h1 { margin: 0 0 6px; font-size: 23px }
+  p { margin: 6px 0 12px; color: #52645a }
+  input[type=search] { width: 100%; padding: 10px; border: 1px solid #aabdb0; border-radius: 6px; font: inherit }
+  button { padding: 10px 12px; border: 0; border-radius: 6px; background: #145c42; color: white; font: inherit; cursor: pointer }
+  button:disabled { opacity: .5; cursor: wait }
+  button:focus-visible,input:focus-visible { outline: 3px solid #79b89a; outline-offset: 2px }
+  #groups { max-height: 245px; overflow: auto; margin: 10px 0; border: 1px solid #d8e1da; background: white }
+  .group { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid #e8eee8; cursor: pointer }
+  .group span { flex: 1; overflow-wrap: anywhere }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 }
+  #status,#coverage { white-space: pre-line; overflow-wrap: anywhere }
+  #coverage { max-height: 95px; overflow: auto; font-size: 12px }
+  #selected { font-size: 12px }
+  [hidden] { display: none!important }
+</style>
+<h1>Export group members</h1>
+<p>Local CSV. Keep this popup open during export.</p>
+<button id="load">Load groups</button>
+<section id="picker" hidden>
+  <p id="selected" aria-live="polite"></p>
+  <input id="search" type="search" placeholder="Search groups" aria-label="Search groups">
+  <div class="actions"><button id="all" type="button">Select all</button><button id="none" type="button">Clear</button></div>
+  <div id="groups" aria-label="Groups"></div>
+  <label><input id="admins" type="checkbox" checked> Include admins</label>
+  <div class="actions"><button id="export" disabled>Start export</button><button id="cancel" hidden>Cancel</button></div>
+</section>
+<p id="status" role="status" aria-live="polite">Open WhatsApp Web, then load groups.</p>
+<p id="coverage"></p>
+<button id="download" hidden>Download CSV</button>
+<script src="popup.js"></script>
+</html>

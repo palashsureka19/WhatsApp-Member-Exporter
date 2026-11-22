@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "project.md": {
-    "mtime": 1795333015.7880611,
-    "seen": 1795333024.587868,
-    "ast_hash": "04ac3eb7a80e1f4548272547bd854025",
+    "mtime": 1795333160.1913266,
+    "seen": 1795333167.2582164,
+    "ast_hash": "7c8e35dd734d3f4a8e6d61106deb6ba0",
     "semantic_hash": ""
   },
   "tests/popup.test.mjs": {
@@ -30,9 +30,9 @@
     "semantic_hash": ""
   },
   "HANDOFF.md": {
-    "mtime": 1795333015.787063,
-    "seen": 1795333024.587868,
-    "ast_hash": "3c332316363a40759be3a10ee342f696",
+    "mtime": 1795333160.1923268,
+    "seen": 1795333167.2582164,
+    "ast_hash": "e1ab6d0c2c799f71b6dd6431d043e2d4",
     "semantic_hash": ""
   }
 }

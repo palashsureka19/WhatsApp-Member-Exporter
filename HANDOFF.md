@@ -27,6 +27,8 @@ The next implementation should first establish whether a maintainable, permitted
 
 ## Concrete resume sequence
 
+The accepted implementation plan is in the `project.md` Roadmap. Its release gate is a verified Investor Circle CSV with every available record unmasked, plus a clear count of members whose phone WhatsApp did not provide.
+
 1. Inspect current `manifest.json`, `popup.js`, `popup.html`, tests, and Git status. Preserve unrelated changes. Use the REA findings above as evidence for design, not source code to copy.
 2. Probe the signed-in Brave WhatsApp tab to establish a reliable group/member data path and coverage. Keep probes local and avoid sending contact data to any service. If the internal interface is unavailable, report the exact limitation before designing around it.
 3. Implement only the Groups flow in our extension. Export actual available rows with `saved_as`, `whatsapp_name`, and normalized `phone_number` (including displayed international country codes), without masking or a row limit. Keep name-only rows separate and blank in the phone column.

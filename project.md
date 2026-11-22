@@ -16,10 +16,11 @@ The user wants only the **Groups** experience: choose a group, start export, and
 
 ## Roadmap
 
-1. **Data-source feasibility:** evaluate a maintainable, permitted way to access group data without opening its panel. The competitor's packaged page script calls an internal WhatsApp client bridge, but that does not establish a stable interface for us. Determine stable group IDs, member IDs, phone values, saved names, public names, and completeness. Keep collection local and initiated by Start Exporting.
-2. **Groups flow:** replace the failing rendered-row scan only after feasibility is established. Provide a searchable multi-select picker with counts, All Groups, selected chips, Include Admin, progress, cancellation, and clear partial coverage. Do not mix groups with duplicate titles.
-3. **Release gate:** test **Investor Circle**, comparing the count and exported rows with the 454-member display, then check that every available row is unmasked, with no free-tier row cap; verify number formatting, saved/public names, duplicate numbers, name-only entries, CSV encoding, and UI state after scanning. Do not promise 454 rows when some member data is unavailable.
-4. **Maintenance:** isolate version-sensitive WhatsApp integration and report when WhatsApp Web changes, rather than silently exporting incomplete or misattributed data.
+1. **Prove the data path in Brave:** evaluate a maintainable, permitted way to access group data without opening its panel. The competitor's packaged page script calls an internal WhatsApp client bridge, but that does not establish a stable interface for us. Read Investor Circle by stable group ID and compare its 454-member display with returned member IDs, saved names, public names, and phone values. Check whether the signed-in user's own membership explains the observed 453-row result.
+2. **Build our Groups flow:** replace the failing rendered-row scan after feasibility is established. Provide a searchable multi-select picker with counts, All Groups, selected chips, Include Admin, progress, cancellation, and clear partial coverage. Keep the current WhatsApp chat and member panels in place. Do not mix groups with duplicate titles.
+3. **Export every available row:** generate CSV locally with `group,saved_as,whatsapp_name,phone_number,status`, without a free-tier cap or masking. Preserve international country codes. Use one row per group membership, including when a person appears in multiple selected groups. Keep name-only rows distinct with blank phone values and an explicit reason when WhatsApp supplies no number.
+4. **Release gate:** run automated checks, then test **Investor Circle** in Brave. Compare roster, resolved-phone, and CSV row counts; check saved/public names, admins, duplicate names, missing phones, CSV encoding, cancellation, and UI state. Report unavailable member data rather than promising 454 phone numbers. Update Graphify and docs, then commit and push to the private remote.
+5. **Maintenance:** isolate version-sensitive WhatsApp integration and report when WhatsApp Web changes, rather than silently exporting incomplete or misattributed data.
 
 ## Install for development
 

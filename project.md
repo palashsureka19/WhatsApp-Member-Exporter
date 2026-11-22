@@ -4,7 +4,7 @@
 
 This private Manifest V3 extension uses `activeTab` and `scripting` to read rendered WhatsApp Web data, process it locally, preview results, and generate CSV. **Its live Groups scan is not ready for use.** Brave discovered groups and opened group info, but participant collection returned zero rows. Synthetic Node tests pass; they do not establish live compatibility. Current version 0.4.5 has a count-only diagnostic and conservative list selection so an unrelated group's members are not exported.
 
-The user wants only the **Groups** experience: choose a group, start export, and receive the full available list without manually opening a group or scrolling a member panel. The installed purple extension demonstrated this interaction on Investor Circle (454 participants): it reported 453 contacts and downloaded 453 CSV rows without visible WhatsApp navigation. See `HANDOFF.md` for the observation and reverse engineering limits. Our extension does **not** yet match that result.
+The user wants only the **Groups** experience: choose a group, start export, and receive the full available list without manually opening a group or scrolling a member panel. The installed purple extension demonstrated this interaction on Investor Circle (454 participants): it reported 453 contacts without visible WhatsApp navigation. Its free CSV had 453 rows, **443 masked as `***PRO***`**, leaving ten unmasked. Static investigation found that it uses an injected WhatsApp client bridge and a group participant API, rather than reading rendered rows. See `HANDOFF.md` for Evidence IDs, precise observations, and limits. Our extension does **not** yet match that result.
 
 ## Existing implementation
 
@@ -16,7 +16,7 @@ The user wants only the **Groups** experience: choose a group, start export, and
 
 ## Roadmap
 
-1. **Data-source feasibility:** inspect what WhatsApp Web makes available to the extension for a selected group without opening its panel. Determine stable group IDs, member IDs, phone values, saved names, public names, and whether data is complete. Keep collection local and initiated by Start Exporting. The competitor's mechanism has not been verified.
+1. **Data-source feasibility:** evaluate a maintainable, permitted way to access group data without opening its panel. The competitor's packaged page script calls an internal WhatsApp client bridge, but that does not establish a stable interface for us. Determine stable group IDs, member IDs, phone values, saved names, public names, and completeness. Keep collection local and initiated by Start Exporting.
 2. **Groups flow:** replace the failing rendered-row scan only after feasibility is established. Provide a searchable multi-select picker with counts, All Groups, selected chips, Include Admin, progress, cancellation, and clear partial coverage. Do not mix groups with duplicate titles.
 3. **Release gate:** test **Investor Circle**, comparing the count and exported rows with the 454-member display, then check number formatting, saved/public names, duplicate numbers, name-only entries, CSV encoding, and UI state after scanning. Do not promise 454 rows when some member data is unavailable.
 4. **Maintenance:** isolate version-sensitive WhatsApp integration and report when WhatsApp Web changes, rather than silently exporting incomplete or misattributed data.

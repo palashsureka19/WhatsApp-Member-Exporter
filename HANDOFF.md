@@ -4,7 +4,8 @@
 
 - Repo: `C:\Users\rajes\OneDrive\Desktop\WhatsApp-Member-Exporter`; private GitHub `palashsureka19-cpu/WhatsApp-Member-Exporter`, branch `master`.
 - Read `project.md` and source before editing. Shell commands require `rtk` per `C:\Users\rajes\.codex\RTK.md`; Git needs `-c safe.directory=C:/Users/rajes/OneDrive/Desktop/WhatsApp-Member-Exporter`.
-- User wants **Groups only**, with a searchable group picker and one-click export that does not open or scroll the WhatsApp member panel. Test **Investor Circle**, not the small Everything group. Keep private contact data out of Git and chat output.
+- User wants **Groups only**, with a searchable group picker and one-click export that does not open or scroll the WhatsApp member panel. **Our extension must export every phone/name row the signed-in WhatsApp client actually makes available, unmasked and free.** Build this independently in our repo; do not modify, unlock, or reuse the competitor's paid extension. Test **Investor Circle**, not the small Everything group. Keep private contact data out of Git and chat output.
+- The user authorizes using their PC and Brave to debug WhatsApp Web, and allows at most two subagents when useful. They plan to clear this chat, so treat this file as the task handoff.
 
 ## Competitor workflow observed, 22 November 2026
 
@@ -22,7 +23,14 @@ Direct inspection of the packaged `assets/i.js` shows the mechanism: an injected
 
 The local MV3 extension is version 0.4.5, but its group scan remains **unusable in live Brave testing**. The picker found 73 groups. Versions 0.4.2-0.4.5 opened group info but returned zero member rows. A diagnostic saw one list and 28 items while a selected small group showed four members and another group's overlay was visible. A broader list selector was tried, then reverted because it could attribute the wrong group's members. Chat restoration also failed in prior live attempts. Synthetic tests pass but cannot validate WhatsApp's current UI. Do not claim the extension can export Investor Circle yet.
 
-The next implementation should first establish whether a maintainable, permitted group-bound data source is available to our extension and whether it provides saved name, public name, and phone for each member. The competitor uses an internal WhatsApp client bridge, which is version-sensitive. Define the trust and privacy boundary before replacing the DOM reader. If WhatsApp exposes only a partial set, report that explicitly. Identify groups by stable ID, not only a possibly duplicated title; keep collection local and user initiated. Then test Investor Circle end to end, including CSV fields, coverage against 454, deduplication, cancellation, and restoring the current chat if navigation is ever needed.
+The next implementation should first establish whether a maintainable, permitted group-bound data source is available to our extension and whether it provides saved name, public name, and phone for each member. The competitor uses an internal WhatsApp client bridge, which is version-sensitive. Define the trust and privacy boundary before replacing the DOM reader. If WhatsApp exposes only a partial set, report that explicitly; **never mask available rows or impose a paid tier in our extension**. Identify groups by stable ID, not only a possibly duplicated title; keep collection local and user initiated. Then test Investor Circle end to end, including CSV fields, coverage against 454, deduplication, cancellation, and restoring the current chat if navigation is ever needed.
+
+## Concrete resume sequence
+
+1. Inspect current `manifest.json`, `popup.js`, `popup.html`, tests, and Git status. Preserve unrelated changes. Use the REA findings above as evidence for design, not source code to copy.
+2. Probe the signed-in Brave WhatsApp tab to establish a reliable group/member data path and coverage. Keep probes local and avoid sending contact data to any service. If the internal interface is unavailable, report the exact limitation before designing around it.
+3. Implement only the Groups flow in our extension. Export actual available rows with `saved_as`, `whatsapp_name`, and normalized `phone_number` (including displayed international country codes), without masking or a row limit. Keep name-only rows separate and blank in the phone column.
+4. Run automated checks and a live Investor Circle test. Compare the displayed group count with collected rows and usable phone rows; inspect CSV headers and aggregate counts without exposing contact values. Reload the unpacked extension, update Graphify and these docs, then commit and push to the private remote.
 
 The user invoked `$reverse-engineer-anything`. Its skill is `C:\Users\rajes\.codex\skills\reverse-engineer-anything\SKILL.md`. No REA MCP tools are connected, so use the documented CLI fallback with the now compatible Node runtime. The installed manifest requests WhatsApp host access, `storage`, `identity`, and `unlimitedStorage`; that does not establish whether contact data is transmitted.
 

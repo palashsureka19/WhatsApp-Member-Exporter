@@ -436,7 +436,7 @@ async function openGroupAndMemberList(group) {
   const viewAll = controls().find(el => /^View all\b/i.test(label(el)));
   if (viewAll) activate(viewAll);
   const list = await waitFor(() => [...document.querySelectorAll('[role="list"]')].find(el => visible(el) && !el.closest('#pane-side') && !el.closest('#main') && el.querySelector('[role="listitem"]')));
-  if (!list) return { error: `Could not find member rows for “${group.name}”.` };
+  if (!list) return { error: `Could not find member rows for “${group.name}” (lists: ${document.querySelectorAll('[role="list"],ul').length}, items: ${document.querySelectorAll('[role="listitem"],li').length}).` };
   for (const previous of document.querySelectorAll('[data-wa-export-members]')) previous.removeAttribute('data-wa-export-members');
   list.setAttribute('data-wa-export-members', 'true');
   list.setAttribute('data-wa-export-count', String(memberCount));

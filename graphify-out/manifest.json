@@ -1,0 +1,50 @@
+{
+  "manifest.json": {
+    "mtime": 1795337720.2612193,
+    "seen": 1795337834.8130724,
+    "ast_hash": "ae5c2783af6a2c51909a307b5bd0932a",
+    "semantic_hash": ""
+  },
+  "popup.js": {
+    "mtime": 1795338129.2757742,
+    "seen": 1795338179.366604,
+    "ast_hash": "67d129c1bd2acb2a3c5df4e24a593e35",
+    "semantic_hash": ""
+  },
+  "popup.html": {
+    "mtime": 1795337720.263137,
+    "seen": 1795337834.8130724,
+    "ast_hash": "cbf258768ddf31df0c4f31dc52913b22",
+    "semantic_hash": ""
+  },
+  "project.md": {
+    "mtime": 1795338166.402172,
+    "seen": 1795338179.366604,
+    "ast_hash": "9a99155e0ab36bb46c7606b99066d270",
+    "semantic_hash": ""
+  },
+  "tests/popup.test.mjs": {
+    "mtime": 1795338129.277774,
+    "seen": 1795338179.366604,
+    "ast_hash": "d976886d065f2505b9993e8d7a3554a1",
+    "semantic_hash": ""
+  },
+  "HANDOFF.md": {
+    "mtime": 1795338166.401248,
+    "seen": 1795338179.366604,
+    "ast_hash": "b453d6855f15b01fa9557473463be2ad",
+    "semantic_hash": ""
+  },
+  "wppconnect-wa.js": {
+    "mtime": 499162500.0,
+    "seen": 1795337834.8130724,
+    "ast_hash": "2248298c6e40fb560e3f0eb12d6c944e",
+    "semantic_hash": ""
+  },
+  "WPPConnect-LICENSE.txt": {
+    "mtime": 499162500.0,
+    "seen": 1795337834.8130724,
+    "ast_hash": "de80f906fa910a5d6758d3330b966f98",
+    "semantic_hash": ""
+  }
+}

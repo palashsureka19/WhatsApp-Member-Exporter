@@ -248,11 +248,11 @@ function openHarness({ large = false, opensChat = true } = {}) {
   const element = (text, extra = {}) => ({ innerText: text, getAttribute: () => null, getBoundingClientRect: () => ({ width: 100, height: 40 }), closest: () => null, ...extra });
   const filter = element('Groups', { classList: { contains: () => false }, getAttribute: key => key === 'aria-pressed' ? 'true' : null });
   const target = element('', { dispatchEvent: () => { clicked = true; }, click() {} });
-  const title = element('Test', { getAttribute: () => 'Test' });
-  const row = element('Test', { querySelector: selector => selector.includes('tabindex') ? target : title });
+  const title = element('Test', { getAttribute: () => 'Test', dispatchEvent() {}, click() {} });
+  const row = element('Test', { dispatchEvent: () => { clicked = true; }, click() {}, querySelector: selector => selector.includes('tabindex') ? target : title });
   const pane = { scrollTop: 150, scrollHeight: 200, clientHeight: 200, querySelectorAll: selector => selector === '*' ? [] : [row] };
-  const header = element('Test');
-  const button = element('Group info Test', { dispatchEvent() {}, click: () => { info = true; } });
+  const button = element('Test', { getAttribute: key => key === 'aria-label' ? 'Group info' : null, dispatchEvent() {}, click: () => { info = true; } });
+  const header = element('Test', { querySelectorAll: () => chat ? [button] : [] });
   const count = element(large ? '20 members' : '4 members', { dispatchEvent() {}, click: () => { members = true; } });
   const all = element('View all (20)', { dispatchEvent() {}, click: () => { expanded = true; } });
   const attrs = {};
@@ -265,7 +265,7 @@ function openHarness({ large = false, opensChat = true } = {}) {
         if (selector.startsWith('#main header')) return chat ? [button] : [];
         if (selector === '[role="list"]') return members && (!large || expanded) ? [list] : [];
         if (selector === '[data-wa-export-members]') return [];
-        return info ? [filter, count, ...(large ? [all] : [])] : [filter];
+        return info ? [filter, button, count, ...(large ? [all] : [])] : chat ? [filter, button] : [filter];
       },
     },
     getComputedStyle: () => ({ display: 'block', visibility: 'visible', overflowY: 'visible' }),

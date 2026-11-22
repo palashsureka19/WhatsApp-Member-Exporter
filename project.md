@@ -1,8 +1,8 @@
 # WhatsApp Member Exporter
 
-## Release 0.4.0 — validation status
+## Release 0.4.2 — validation status
 
-The local regression suite passes, but **this release still needs a live WhatsApp scan after reloading the extension**. The last successful browser check reproduced the old 0.3.2 chat-opening failure and confirmed that small groups show members inline without a View all button. The latest reload/test attempt was blocked by the computer-control URL verification guard. Do not treat fixture tests as proof of compatibility with the current WhatsApp DOM.
+The local regression suite passes, but **0.4.2 still needs a live WhatsApp scan after reloading the extension**. Brave loaded 0.4.1 and discovered 73 groups. Its live scan of “Everything” opened the correct chat, then reported `Could not open the chat` with zero rows. The header's accessibility label was `Group info`, while its visible text contained the group name; the previous exact label check could not match both. Version 0.4.2 checks the active chat header for the exact group name and finds its `Group info` button there. This fix has synthetic test coverage but has **not been live tested** because Computer Use stopped when it could not verify Brave's URL while opening extension settings.
 
 This pass fixes the row activation target, waits for the selected chat to open, includes role-based header buttons, supports inline member lists, and opens View all when present. Discovery starts at the top and handles Groups under More lists. The filter badge is no longer treated as the total group count. Stop scan retains collected rows, and the preview reports per-group member counts and partial coverage. A narrow-panel scrolling regression was also fixed.
 
@@ -26,7 +26,7 @@ Chrome Manifest V3 extension that exports only participant and chat details rend
 3. Open WhatsApp Web. Click the extension and choose a scan action.
 4. Review the preview before choosing **Download CSV**.
 
-Brave: use `brave://extensions` instead. For this update, click **Reload** on the existing exporter card and confirm version **0.4.0**. Keep the extension popup open until scanning and download finish; closing it discards the in-memory preview and can interrupt a batch. You do not need to scroll member lists yourself. The extension moves the rendered lists automatically; it cannot collect rows WhatsApp never renders.
+Brave: use `brave://extensions` instead. For this update, click **Reload** on the existing exporter card and confirm version **0.4.2**. Keep the extension popup open until scanning and download finish; closing it discards the in-memory preview and can interrupt a batch. You do not need to scroll member lists yourself. The extension moves the rendered lists automatically; it cannot collect rows WhatsApp never renders.
 
 After editing, use **Reload** on the extension card in `chrome://extensions`.
 
@@ -39,7 +39,7 @@ After editing, use **Reload** on the extension card in `chrome://extensions`.
 ## Roadmap
 
 1. **Current:** rendered group and visible chat scans, one/all group dropdown, local CSV, null-result handling, and tests for normalization/deduplication.
-2. **Release gate still pending:** reload 0.4.0 in Brave, then compare behavior on a small group, a group requiring scrolling, and rows where WhatsApp shows only a name; confirm selectors, CSV download, cancellation and restoration behavior.
+2. **Release gate still pending:** reload 0.4.2 in Brave, then scan the small “Everything” group. If it still reports “Could not open the chat,” inspect the live `#main header` DOM and its Group info button. Then compare a group requiring scrolling and rows where WhatsApp shows only a name; confirm CSV download, cancellation and restoration behavior.
 3. **Selector maintenance:** update selectors if WhatsApp Web changes its rendered DOM; report incomplete scans when rows or counts cannot be verified.
 
 ## Manual validation plan
@@ -52,7 +52,7 @@ After editing, use **Reload** on the extension card in `chrome://extensions`.
 
 ## Automated checks in this pass
 
-15 Node tests cover null script results, standalone injected functions, group discovery, delayed chat navigation, inline versus expanded member lists, failed-navigation rejection, recycled member rows, duplicate names, number deduplication, cancellation, detached panels, count mismatch, narrow-panel scrolling, country codes, message-preview exclusion and CSV escaping. These tests use synthetic data only. No real contacts or exported CSVs are committed.
+15 Node tests cover null script results, standalone injected functions, group discovery, delayed chat navigation, exact header identification with a generic `Group info` accessibility label, inline versus expanded member lists, failed-navigation rejection, recycled member rows, duplicate names, number deduplication, cancellation, detached panels, count mismatch, narrow-panel scrolling, country codes, message-preview exclusion and CSV escaping. These tests use synthetic data only. No real contacts or exported CSVs are committed.
 
 ## Limits and risks
 

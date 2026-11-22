@@ -414,8 +414,17 @@ async function openGroupAndMemberList(group) {
     if (host.scrollTop === top) break;
   }
   if (!selectedRow) return { error: `Could not locate group “${group.name}” in the chat list.` };
-  activate(selectedRow.querySelector('[tabindex="0"], [role="gridcell"]') || selectedRow.querySelector('span[title]') || selectedRow);
-  const infoButton = await waitFor(() => [...document.querySelectorAll('#main header button,#main header [role="button"]')].find(el => visible(el) && /Group info/i.test(label(el)) && (label(el).replace(/^Group info\s*/i, '') === group.name || document.querySelector('#main header')?.innerText.split('\n').some(line => line.trim() === group.name))));
+  const infoForGroup = () => {
+    const header = document.querySelector('#main header');
+    if (!header?.innerText.split(/\r?\n/).some(line => line.trim() === group.name)) return null;
+    return [...header.querySelectorAll('button,[role="button"]')].find(el => visible(el) && /^Group info\b/i.test(label(el)));
+  };
+  for (const target of [selectedRow, selectedRow.querySelector('[tabindex="0"], [role="gridcell"]'), selectedRow.querySelector('span[title]')].filter(Boolean)) {
+    activate(target);
+    const opened = await waitFor(infoForGroup);
+    if (opened) break;
+  }
+  const infoButton = infoForGroup();
   if (!infoButton) return { error: `Could not open the chat for “${group.name}”.` };
   activate(infoButton);
   const controls = () => [...document.querySelectorAll('button,[role="button"]')].filter(el => visible(el) && !el.closest('#pane-side') && !el.closest('#main'));

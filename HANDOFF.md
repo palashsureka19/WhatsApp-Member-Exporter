@@ -1,5 +1,7 @@
 # Next chat handoff
 
+> Update, 22 November 2026: Version 0.5.0 replaced the rendered-row scanner with a bundled WA-JS Groups flow. The user reported it working in Brave. CSV filenames now use `{Group Name}Contacts-YYYY-MM-DD.csv` (or `Selected-GroupsContacts-YYYY-MM-DD.csv` for multiple groups). The historical investigation below describes the earlier 0.4.5 state; see `project.md` for current implementation and remaining verification.
+
 ## Start here
 
 - Repo: `C:\Users\rajes\OneDrive\Desktop\WhatsApp-Member-Exporter`; private GitHub `palashsureka19-cpu/WhatsApp-Member-Exporter`, branch `master`.
